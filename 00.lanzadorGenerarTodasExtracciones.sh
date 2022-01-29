@@ -1,0 +1,6 @@
+./01.GenerarExtraccionSubversionFuentesDesarrollo.sh
+./02.GenerarExtraccionSubversionFuentesDesarrolloBatch.sh
+./03.GenerarExtraccionSubversionFuentesPruebas.sh
+./04.GenerarExtraccionSubversionFuentesPruebasBatch.sh
+./05.GenerarExtraccionSubversionFuentesProduccion.sh
+./06.GenerarExtraccionSubversionFuentesProduccionBatch.sh

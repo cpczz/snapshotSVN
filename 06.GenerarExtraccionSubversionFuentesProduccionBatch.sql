@@ -264,7 +264,6 @@ select * from olb
 order by 1
 )
 -- DELTA Desarrollo corte + DELTA Produccion
-
 select CASE WHEN versionproduccion is null
             THEN 
                CASE WHEN ProgramaServidorWL11PROD is not null

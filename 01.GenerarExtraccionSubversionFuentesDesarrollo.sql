@@ -20,86 +20,219 @@ select 'set -x ' from dual;
 select 'mkdir -p ./Fuentes-DESA ' from dual;
 
 with 
-desarrollo as (
-  select substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
-        ,max(revision) as Version
-        ,entorno
+ficherosWL11PROD as (
+  select fecha as FechaServidorWL11PROD,
+         substr(directorio,instr(directorio,'/',1,3)+1,length(directorio)-instr(directorio,'/',1,3)) as ProgramaServidorWL11PROD,
+         directorio as DirectorioWL11PROD
+  from CASUE.TSUFRW1E
+),
+desarrollo as ( 
+  select * from (
+  select cod_repositorio
         ,cod_url as Rama
-		,cod_repositorio
+        ,substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
+		,revision
+        ,fecha
+		,cod_usuario
+		,entorno
+		,first_value(revision) ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, revision desc) as Version
+		,first_value(fecha)    ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, fecha    desc) as FechaVersion
+		,row_number() OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, revision desc, entorno) as RN
   from tsusvnp
   where entorno = 'Desarrollo'
-  group by substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2))
-          ,entorno
-          ,cod_url
-		  ,cod_repositorio
+  order by cod_url, revision desc ) where RN = 1 
+),
+desarrolloCorte as ( 
+  select * from (
+  select cod_repositorio
+        ,cod_url as Rama
+        ,substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
+		,revision
+        ,fecha
+		,cod_usuario
+		,entorno
+		,first_value(revision) ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, revision asc) as Version
+		,first_value(fecha)    ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, fecha    asc) as FechaVersion
+		,row_number() OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, revision desc, entorno) as RN
+  from tsusvnp
+  where entorno = 'Desarrollo' -- and fecha <= to_date('20190101','YYYYMMDD')
+  order by cod_url, revision desc ) where RN = 1
 ),
 prueba as (
-  select substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
-        ,max(revision) as Version
-        ,entorno
+  select * from (
+  select cod_repositorio
         ,cod_url as Rama
-		,cod_repositorio
+        ,substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
+		,revision
+        ,fecha
+		,cod_usuario
+		,entorno
+		,first_value(revision) ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, revision desc) as Version
+		,first_value(fecha)    ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, fecha    desc) as FechaVersion
+		,row_number() OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, revision desc, entorno) as RN
   from tsusvnp
   where entorno = 'Prueba'
-  group by substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2))
-          ,entorno
-          ,cod_url
-		  ,cod_repositorio
+  order by cod_url, revision desc ) where RN = 1
 ),
 produccion as (
-  select substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
-        ,max(revision) as Version
-        ,entorno
+  select * from (
+  select cod_repositorio
         ,cod_url as Rama
-		,cod_repositorio
+        ,substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2)) as ProgramaFuente
+		,revision
+        ,fecha
+		,cod_usuario
+		,entorno
+		,first_value(revision) ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, revision desc) as Version
+		,first_value(fecha)    ignore nulls OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, entorno, fecha    desc) as FechaVersion
+		,row_number() OVER (PARTITION BY cod_url, entorno ORDER BY cod_url, revision desc, entorno) as RN
   from tsusvnp
   where entorno = 'Produccion'
-  group by substr(cod_url,instr(cod_url,'/',1,2)+1,length(cod_url)-instr(cod_url,'/',1,2))
-          ,entorno
-          ,cod_url
-		  ,cod_repositorio
+  order by cod_url, revision desc ) where RN = 1
 ),
 librerias as (
-select D.ProgramaFuente as LibreriaFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as LibreriaFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%pll' 
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente
 ),
 menus as (
-select D.ProgramaFuente as MenuFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as MenuFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%mmb' 
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente
 ),
 pantallas as (
-select D.ProgramaFuente as PantallaFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as PantallaFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%fmb' 
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente  
 ),
 informes as (
-select D.ProgramaFuente as InformeFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as InformeFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%rdf' and D.Rama not like '%RDF_BATCH%' 
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente
 ),
 informes_batch as (
-select D.ProgramaFuente as InformeFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as InformeFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%rdf' and D.Rama  like '%RDF_BATCH%' 
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente
 ),
 olb as (
-select D.ProgramaFuente as InformeFuente, D.entorno as Desarrollo, D.Version as VersionDesarrollo, P.entorno as Prueba, P.Version as VersionPrueba, E.Entorno as Produccion, E.Version as VersionProduccion, D.Rama as RamaDesarrollo, P.Rama as RamaPruebas, E.Rama as RamaProduccion, D.cod_repositorio
-from desarrollo D, prueba P, produccion E
+select D.ProgramaFuente as OlbFuente
+      ,D.entorno        as Desarrollo
+	  ,D.Version        as VersionDesarrollo
+	  ,D.FechaVersion   as FechaVersionDesarrollo
+	  ,P.entorno        as Prueba
+	  ,P.Version        as VersionPrueba
+	  ,P.FechaVersion   as FechaVersionPruebas
+	  ,E.Entorno        as Produccion
+	  ,E.Version        as VersionProduccion
+	  ,E.FechaVersion   as FechaVersionProduccion
+	  ,D.Rama           as RamaDesarrollo
+	  ,P.Rama           as RamaPruebas
+	  ,E.Rama           as RamaProduccion
+	  ,X.entorno        as DesarrolloCorte
+	  ,X.Version        as VersionDesarrolloCorte
+	  ,X.FechaVersion   as FechaVersionDesarrolloCorte
+	  ,D.cod_repositorio
+from desarrollo D, prueba P, produccion E, desarrolloCorte X
 where D.ProgramaFuente like '%olb'
   and P.ProgramaFuente (+)= D.ProgramaFuente
   and E.ProgramaFuente (+)= D.ProgramaFuente
+  and X.ProgramaFuente    = D.ProgramaFuente
 ),
 ControlDeVersiones as (
 select * from pantallas

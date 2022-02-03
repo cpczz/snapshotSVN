@@ -263,11 +263,16 @@ union all
 select * from olb
 order by 1
 )
--- DELTA Desarrollo + DELTA Produccion
+-- DELTA Desarrollo corte + DELTA Produccion
+
 select CASE WHEN versionproduccion is null
-            THEN 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versiondesarrollo||' ' ||cod_repositorio||RamaDesarrollo||' Fuentes-PROD'
-            ELSE 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versionproduccion||' ' ||cod_repositorio||RamaProduccion||' Fuentes-PROD'
+            THEN 
+               CASE WHEN ProgramaServidorWL11PROD is not null
+                    THEN 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versiondesarrollo||' ' ||cod_repositorio||RamaDesarrollo||' FuentesBatch-PROD'
+               END             
+            ELSE 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versionproduccion||' ' ||cod_repositorio||RamaProduccion||' FuentesBatch-PROD'
        END as extraer
-from ControlDeVersionesSoloBatch;
+from ControlDeVersionesSoloBatch, ficherosWL11PROD
+where ProgramaServidorWL11PROD (+)= pantallafuente;
 
 spool off   

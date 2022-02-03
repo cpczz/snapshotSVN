@@ -264,7 +264,7 @@ select * from olb
 order by 1
 )
 -- DELTA Desarrollo
-select 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versiondesarrollo||' ' ||cod_repositorio||RamaDesarrollo||' Fuentes-DESA' as extraer from ControlDeVersionesSoloBatch;
+select 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versiondesarrollo||' ' ||cod_repositorio||RamaDesarrollo||' FuentesBatch-DESA' as extraer from ControlDeVersionesSoloBatch;
 
 
 spool off   

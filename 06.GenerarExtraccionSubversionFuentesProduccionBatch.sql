@@ -13,7 +13,7 @@ define FECHA = &_DATE ;
 
 alter session set nls_date_format='YYYY-MM-DD HH24:MI:SS';
 
-spool &FECHA..&SALIDA..&ENTORNO..sh 
+spool &ENTORNO..&SALIDA..&FECHA..sh 
 -- spool 20181103.Extraer_FMB.SUBVERSION.DESARROLLO.sh
 
 select 'set -x ' from dual;

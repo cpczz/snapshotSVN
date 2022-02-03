@@ -272,6 +272,6 @@ select CASE WHEN versionproduccion is null
             ELSE 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versionproduccion||' ' ||cod_repositorio||RamaProduccion||' FuentesBatch-PROD'
        END as extraer
 from ControlDeVersionesSoloBatch, ficherosWL11PROD
-where ProgramaServidorWL11PROD (+)= pantallafuente;
+where ProgramaServidorWL11PROD (+)= InformeFuente;
 
 spool off   

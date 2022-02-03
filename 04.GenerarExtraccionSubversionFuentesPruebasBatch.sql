@@ -272,7 +272,7 @@ select CASE WHEN versionprueba is null
             ELSE 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versionprueba||' ' ||cod_repositorio||RamaPruebas||' FuentesBatch-TEST'
        END as extraer
 from ControlDeVersionesSoloBatch, ficherosWL11PROD
-where ProgramaServidorWL11PROD (+)= pantallafuente;
+where ProgramaServidorWL11PROD (+)= InformeFuente;
 
 
 spool off   

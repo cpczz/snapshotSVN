@@ -267,9 +267,9 @@ order by 1
 select CASE WHEN versionprueba is null
             THEN 
                CASE WHEN ProgramaServidorWL11PROD is not null
-                    THEN 'svn export --revision '||versiondesarrollocorte||' ' ||cod_repositorio||RamaDesarrollo||' Fuentes-TEST'
+                    THEN 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versiondesarrollocorte||' ' ||cod_repositorio||RamaDesarrollo||' Fuentes-TEST'
                END             
-            ELSE 'svn export --revision '||versionprueba||' ' ||cod_repositorio||RamaPruebas||' Fuentes-TEST'
+            ELSE 'svn export --username UsuarioSubversion --password PasswordUsuarioSubversion --revision '||versionprueba||' ' ||cod_repositorio||RamaPruebas||' Fuentes-TEST'
        END as extraer
 from ControlDeVersionesSinBatch, ficherosWL11PROD
 where ProgramaServidorWL11PROD (+)= pantallafuente;
